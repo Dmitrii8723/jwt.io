@@ -63,14 +63,20 @@ res.json({ accessToken });
 
 app.post('/users/login', async (req, res) => {
   const user = users.find(user => user.name === req.body.username);
-  const passwordMatched = await bcrypt.compare(req.body.password, user.password);
-  if (passwordMatched) {
+  if (user === null) {
+      return res.status(400).send('Cannot find user');
+  } 
+  try {
+  if(await bcrypt.compare(req.body.password, user.password)) {
   const accessToken = generateAccessToken({ name: user.name });
   const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET);
   refreshTokens.push(refreshToken);
   res.json({ accessToken, refreshToken });
-} else {
-    res.sendStatus(403);
+  } else {
+   res.status(401).send('Not Allowed');
+  }
+} catch {
+    res.sendStatus(500);
 }
 });
 
